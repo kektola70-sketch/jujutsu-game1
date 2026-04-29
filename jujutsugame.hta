@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jujutsu Kaisen: Cursed Era</title>
+    <!-- Эта строчка заставляет окно работать на современном движке -->
+    <meta http-equiv="x-ua-compatible" content="ie=9">
+    
+    <hta:application 
+        id="jjkGame"
+        applicationname="JujutsuGame"
+        border="thin"
+        caption="yes"
+        showintaskbar="yes"
+        singleinstance="yes"
+        sysmenu="yes"
+        windowstate="normal"
+        navigable="yes"
+        scroll="no"
+    >
+
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #ffffff;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        #window-container {
+            border: 2px solid #4a00e0;
+            border-radius: 15px;
+            padding: 30px;
+            background: #111;
+            box-shadow: 0 0 20px #4a00e0;
+            height: 500px;
+        }
+        h1 { color: #8e2de2; text-shadow: 2px 2px #000; letter-spacing: 3px; }
+        input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+        }
+        button {
+            width: 85%;
+            padding: 12px;
+            margin: 10px 0;
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background: #5a10f0; }
+        .hidden { display: none; }
+        .stats { text-align: left; background: #1a1a1a; padding: 15px; margin-top: 20px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="window-container">
+        <!-- ГЛАВНЫЙ ЭКРАН -->
+        <div id="screen-start">
+            <h1>JUJUTSU KAISEN</h1>
+            <p>Система контроля магической энергии</p>
+            <button onclick="showScreen('screen-login')">ВОЙТИ</button>
+            <button onclick="showScreen('screen-reg')">РЕГИСТРАЦИЯ</button>
+            <button onclick="window.close()" style="background: #333;">ВЫХОД</button>
+        </div>
+
+        <!-- РЕГИСТРАЦИЯ -->
+        <div id="screen-reg" class="hidden">
+            <h2>НОВЫЙ МАГ</h2>
+            <input type="text" id="reg-name" placeholder="Имя мага">
+            <input type="password" id="reg-pass" placeholder="Пароль">
+            <button onclick="register()">СОЗДАТЬ АККАУНТ</button>
+            <button onclick="showScreen('screen-start')" style="background: #333;">НАЗАД</button>
+        </div>
+
+        <!-- ВХОД -->
+        <div id="screen-login" class="hidden">
+            <h2>АВТОРИЗАЦИЯ</h2>
+            <input type="text" id="login-name" placeholder="Имя мага">
+            <input type="password" id="login-pass" placeholder="Пароль">
+            <button onclick="login()">ВОЙТИ</button>
+            <button onclick="showScreen('screen-start')" style="background: #333;">НАЗАД</button>
+        </div>
+
+        <!-- МЕНЮ ИГРЫ -->
+        <div id="screen-menu" class="hidden">
+            <h2 id="display-name">Маг: ???</h2>
+            <div class="stats">
+                <div id="stat-rank">Ранг: 4-й ранг</div>
+                <div id="stat-lvl">Уровень: 1</div>
+                <div id="stat-exp">Опыт: 0</div>
+            </div>
+            <button onclick="train()">ТРЕНИРОВАТЬСЯ (+10 EXP)</button>
+            <button onclick="logout()" style="background: #600;">ВЫЙТИ</button>
+        </div>
+    </div>
+
+    <script>
+        // Изменяем размер окна при запуске
+        window.resizeTo(500, 650);
+
+        function showScreen(id) {
+            document.getElementById('screen-start').className = 'hidden';
+            document.getElementById('screen-reg').className = 'hidden';
+            document.getElementById('screen-login').className = 'hidden';
+            document.getElementById('screen-menu').className = 'hidden';
+            document.getElementById(id).className = '';
+        }
+
+        // Мы используем объект в памяти для хранения данных в рамках сессии HTA
+        // Но для реального сохранения используем текстовый файл через FileSystemObject
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var dbPath = "accounts.txt";
+
+        function register() {
+            var name = document.getElementById('reg-name').value;
+            var pass = document.getElementById('reg-pass').value;
+            if(!name || !pass) { alert("Заполни поля!"); return; }
+
+            var file;
+            if (!fso.FileExists(dbPath)) {
+                file = fso.CreateTextFile(dbPath, true);
+            } else {
+                file = fso.OpenTextFile(dbPath, 8);
+            }
+            
+            file.WriteLine(name + "|" + pass + "|1|4-й ранг|0");
+            file.Close();
+            
+            alert("Маг " + name + " зачислен в техникум!");
+            showScreen('screen-login');
+        }
+
+        var currentPlayer = null;
+
+        function login() {
+            var name = document.getElementById('login-name').value;
+            var pass = document.getElementById('login-pass').value;
+
+            if (!fso.FileExists(dbPath)) { alert("Нет зарегистрированных магов!"); return; }
+
+            var file = fso.OpenTextFile(dbPath, 1);
+            var found = false;
+
+            while (!file.AtEndOfStream) {
+                var line = file.ReadLine();
+                var data = line.split("|");
+                if (data[0] == name && data[1] == pass) {
+                    currentPlayer = { name: data[0], lvl: data[2], rank: data[3], exp: data[4] };
+                    found = true;
+                    break;
+                }
+            }
+            file.Close();
+
+            if (found) {
+                updateUI();
+                showScreen('screen-menu');
+            } else {
+                alert("Неверное имя или пароль!");
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('display-name').innerText = "Маг: " + currentPlayer.name;
+            document.getElementById('stat-lvl').innerText = "Уровень: " + currentPlayer.lvl;
+            document.getElementById('stat-rank').innerText = "Ранг: " + currentPlayer.rank;
+            document.getElementById('stat-exp').innerText = "Опыт: " + currentPlayer.exp;
+        }
+
+        function train() {
+            currentPlayer.exp = parseInt(currentPlayer.exp) + 10;
+            alert("Вы потренировались! Текущий опыт: " + currentPlayer.exp);
+            updateUI();
+            // Тут можно добавить логику сохранения обратно в файл
+        }
+
+        function logout() { showScreen('screen-start'); }
+    </script>
+</body>
+</html>
