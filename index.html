@@ -2,191 +2,357 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jujutsu Kaisen: Cursed Era</title>
+    
+    <!-- Подключение иконки -->
+    <link rel="icon" href="icon.jpg" type="image/jpeg">
+
     <style>
+        * { box-sizing: border-box; }
         body {
-            background-color: #0b0b0b;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #050505;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
             overflow: hidden;
         }
 
         #game-container {
-            width: 400px;
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 15px;
+            width: 550px;
+            background: #111;
             border: 2px solid #4a00e0;
-            box-shadow: 0 0 20px rgba(74, 0, 224, 0.5);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(74, 0, 224, 0.5);
             text-align: center;
+            position: relative;
         }
 
-        h1 { color: #8e2de2; text-shadow: 2px 2px #000; }
-        
+        .screen { display: none; }
+        .active { display: block; }
+
+        h1 { color: #fff; text-shadow: 0 0 10px #8e2de2; letter-spacing: 4px; margin-bottom: 20px; }
+        h2 { color: #8e2de2; margin-bottom: 15px; }
+
         input, select {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: none;
-            background: #333;
-            color: white;
-        }
-
-        button {
             width: 100%;
             padding: 12px;
-            margin-top: 15px;
-            border-radius: 5px;
-            border: none;
-            background: linear-gradient(to right, #8e2de2, #4a00e0);
+            margin: 10px 0;
+            background: #1a1a1a;
+            border: 1px solid #333;
             color: white;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            text-transform: uppercase;
             transition: 0.3s;
         }
-
-        button:hover { transform: scale(1.02); opacity: 0.9; }
-
-        .hidden { display: none; }
-        
-        .stat-box {
-            background: #252525;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
-            text-align: left;
-            font-size: 14px;
+        .btn-blue { background: linear-gradient(45deg, #4a00e0, #8e2de2); color: white; }
+        .btn-blue:hover { transform: scale(1.02); box-shadow: 0 0 15px #8e2de2; }
+        .btn-grey { background: #252525; color: #aaa; }
+        .btn-domain { 
+            background: linear-gradient(45deg, #000, #4a00e0); 
+            color: #fff; 
+            border: 1px border #8e2de2;
+            display: none; /* Открывается на 5 уровне */
         }
 
-        .menu-btn { background: #333; border: 1px solid #4a00e0; margin-bottom: 10px; }
+        /* Панель игрока */
+        .stats-box {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 5px solid #4a00e0;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .stat-line { display: flex; justify-content: space-between; margin: 5px 0; font-size: 16px; }
+        .exp-bar { width: 100%; height: 6px; background: #333; border-radius: 3px; margin-top: 10px; }
+        .exp-fill { height: 100%; background: #8e2de2; width: 0%; border-radius: 3px; transition: 0.5s; }
+
+        /* Боевой интерфейс */
+        #battle-log {
+            height: 120px;
+            background: #000;
+            border: 1px solid #222;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 14px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .hp-bar { width: 100%; height: 15px; background: #300; border-radius: 8px; margin: 10px 0; overflow: hidden; }
+        .hp-fill { height: 100%; background: #f00; width: 100%; transition: 0.3s; }
+        
+        /* Эффект территории */
+        .domain-active {
+            animation: domain-pulse 2s infinite;
+            border: 2px solid #fff !important;
+        }
+        @keyframes domain-pulse {
+            0% { box-shadow: 0 0 20px #8e2de2; }
+            50% { box-shadow: 0 0 50px #4a00e0; }
+            100% { box-shadow: 0 0 20px #8e2de2; }
+        }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <!-- ЭКРАН ПРИВЕТСТВИЯ -->
-    <div id="start-screen">
+
+    <!-- ГЛАВНЫЙ ЭКРАН -->
+    <div id="screen-start" class="screen active">
         <h1>JUJUTSU KAISEN</h1>
-        <p>Магическая Битва</p>
-        <button onclick="showScreen('login-screen')">Войти</button>
-        <button onclick="showScreen('register-screen')">Регистрация</button>
+        <img src="icon.jpg" style="width: 100px; border-radius: 50%; border: 2px solid #4a00e0; margin-bottom: 10px;">
+        <button class="btn btn-blue" onclick="showScreen('screen-login')">Войти</button>
+        <button class="btn btn-grey" onclick="showScreen('screen-reg')">Регистрация</button>
     </div>
 
-    <!-- ЭКРАН РЕГИСТРАЦИИ -->
-    <div id="register-screen" class="hidden">
-        <h2>Новый Маг</h2>
-        <input type="text" id="reg-name" placeholder="Имя персонажа">
+    <!-- РЕГИСТРАЦИЯ -->
+    <div id="screen-reg" class="screen">
+        <h2>НОВЫЙ МАГ</h2>
+        <input type="text" id="reg-name" placeholder="Имя мага">
         <input type="password" id="reg-pass" placeholder="Пароль">
         <select id="reg-tech">
-            <option value="Техника Десяти Теней">Техника Десяти Теней</option>
+            <option value="Десять Теней">Техника Десяти Теней</option>
             <option value="Манипуляция Кровью">Манипуляция Кровью</option>
             <option value="Проклятая Речь">Проклятая Речь</option>
-            <option value="Бесконечность">Бесконечность (Уч. версия)</option>
+            <option value="Созидание">Техника Созидания</option>
         </select>
-        <button onclick="register()">Создать аккаунт</button>
-        <button onclick="showScreen('start-screen')" style="background: gray;">Назад</button>
+        <button class="btn btn-blue" onclick="register()">Создать аккаунт</button>
+        <button class="btn btn-grey" onclick="showScreen('screen-start')">Назад</button>
     </div>
 
-    <!-- ЭКРАН ВХОДА -->
-    <div id="login-screen" class="hidden">
-        <h2>Вход в Техникум</h2>
-        <input type="text" id="login-name" placeholder="Имя мага">
+    <!-- ВХОД -->
+    <div id="screen-login" class="screen">
+        <h2>ВХОД</h2>
+        <input type="text" id="login-name" placeholder="Имя">
         <input type="password" id="login-pass" placeholder="Пароль">
-        <button onclick="login()">Войти в игру</button>
-        <button onclick="showScreen('start-screen')" style="background: gray;">Назад</button>
+        <button class="btn btn-blue" onclick="login()">Войти в игру</button>
+        <button class="btn btn-grey" onclick="showScreen('screen-start')">Назад</button>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ ИГРЫ -->
-    <div id="main-menu" class="hidden">
-        <h2 id="user-display">Маг: ???</h2>
-        <div class="stat-box">
-            <div id="stat-rank">Ранг: 4-й</div>
-            <div id="stat-tech">Техника: ---</div>
-            <div id="stat-lvl">Уровень: 1</div>
+    <!-- МЕНЮ -->
+    <div id="screen-menu" class="screen">
+        <h2 id="ui-name">Маг</h2>
+        <div class="stats-box">
+            <div class="stat-line"><span>Уровень:</span> <span id="ui-lvl">1</span></div>
+            <div class="stat-line"><span>Ранг:</span> <span id="ui-rank">4-й ранг</span></div>
+            <div class="stat-line"><span>Энергия (ПЭ):</span> <span id="ui-energy">100</span></div>
+            <div class="stat-line"><span>Деньги:</span> <span id="ui-money">0</span> ¥</div>
+            <div class="stat-line"><span id="ui-tech" style="color: #8e2de2; font-weight: bold;">Техника</span></div>
+            <div class="exp-bar"><div id="ui-exp-fill" class="exp-fill"></div></div>
         </div>
-        <button class="menu-btn" onclick="alert('Поиск проклятий начат...')">Охота на проклятия</button>
-        <button class="menu-btn" onclick="alert('Магазин закрыт на перерыв')">Магазин артефактов</button>
-        <button class="menu-btn" onclick="logout()" style="color: #ff4d4d;">Выйти</button>
+        <button class="btn btn-blue" onclick="startBattle()">Охота на проклятия</button>
+        <button class="btn btn-grey" onclick="buyItem()">Магазин артефактов</button>
+        <button class="btn btn-grey" onclick="logout()" style="color: #f66;">Выйти</button>
+    </div>
+
+    <!-- БИТВА -->
+    <div id="screen-battle" class="screen">
+        <h2 id="enemy-name">Проклятие</h2>
+        <div class="hp-bar"><div id="enemy-hp-fill" class="hp-fill"></div></div>
+        <div id="battle-log"></div>
+        <div class="battle-actions">
+            <button class="btn btn-blue" onclick="playerAction('attack')">Удар кулаком</button>
+            <button class="btn btn-blue" onclick="playerAction('tech')" id="btn-tech-use">Техника (20 ПЭ)</button>
+            <button class="btn btn-domain" id="btn-domain-expansion" onclick="playerAction('domain')">РАСШИРЕНИЕ ТЕРРИТОРИИ</button>
+            <button class="btn btn-grey" onclick="playerAction('heal')">Концентрация (Лечение)</button>
+        </div>
     </div>
 </div>
 
 <script>
-    let currentPlayer = null;
+    let player = null;
+    let enemy = null;
+    let domainActive = false;
 
-    // Функция переключения экранов
-    function showScreen(screenId) {
-        document.getElementById('start-screen').classList.add('hidden');
-        document.getElementById('register-screen').classList.add('hidden');
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-menu').classList.add('hidden');
-        
-        document.getElementById(screenId).classList.remove('hidden');
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
     }
 
-    // Регистрация
     function register() {
-        const name = document.getElementById('reg-name').value;
-        const pass = document.getElementById('reg-pass').value;
+        const name = document.getElementById('reg-name').value.trim();
+        const pass = document.getElementById('reg-pass').value.trim();
         const tech = document.getElementById('reg-tech').value;
 
-        if (!name || !pass) { alert("Заполни все поля!"); return; }
+        if (!name || !pass) return alert("Заполни все поля!");
 
-        let players = JSON.parse(localStorage.getItem('jujutsu_players') || "[]");
+        let accounts = JSON.parse(localStorage.getItem('jjk_users') || "[]");
+        if (accounts.find(u => u.name === name)) return alert("Имя занято!");
+
+        accounts.push({ name, pass, tech, lvl: 1, exp: 0, money: 100, rank: "4-й ранг", energy: 100 });
+        localStorage.setItem('jjk_users', JSON.stringify(accounts));
+        alert("Аккаунт создан!");
+        showScreen('screen-login');
+    }
+
+    function login() {
+        const name = document.getElementById('login-name').value.trim();
+        const pass = document.getElementById('login-pass').value.trim();
+        let accounts = JSON.parse(localStorage.getItem('jjk_users') || "[]");
+        player = accounts.find(u => u.name === name && u.pass === pass);
+
+        if (player) {
+            updateUI();
+            showScreen('screen-menu');
+        } else {
+            alert("Неверные данные!");
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('ui-name').innerText = player.name;
+        document.getElementById('ui-lvl').innerText = player.lvl;
+        document.getElementById('ui-rank').innerText = player.rank;
+        document.getElementById('ui-tech').innerText = player.tech;
+        document.getElementById('ui-money').innerText = player.money;
+        document.getElementById('ui-energy').innerText = player.energy;
+        document.getElementById('btn-tech-use').innerText = player.tech + " (20 ПЭ)";
+
+        let nextLvl = player.lvl * 100;
+        document.getElementById('ui-exp-fill').style.width = (player.exp / nextLvl * 100) + "%";
         
-        if (players.find(p => p.name === name)) {
-            alert("Это имя уже занято!");
+        // Кнопка Территории доступна с 5 уровня
+        if (player.lvl >= 5) {
+            document.getElementById('btn-domain-expansion').style.display = "block";
+        }
+    }
+
+    function startBattle() {
+        domainActive = false;
+        document.getElementById('game-container').classList.remove('domain-active');
+        
+        let rankNum = Math.floor(Math.random() * 4) + 1;
+        enemy = {
+            name: "Проклятие " + rankNum + "-го ранга",
+            hp: 50 + (player.lvl * 15),
+            maxHp: 50 + (player.lvl * 15),
+            dmg: 5 + (rankNum * 3)
+        };
+        
+        document.getElementById('enemy-name').innerText = enemy.name;
+        document.getElementById('battle-log').innerHTML = "Вы столкнулись с угрозой! Ваш ход.<br>";
+        updateEnemyHP();
+        showScreen('screen-battle');
+    }
+
+    function updateEnemyHP() {
+        let percent = (enemy.hp / enemy.maxHp) * 100;
+        document.getElementById('enemy-hp-fill').style.width = percent + "%";
+    }
+
+    function addLog(text, color = "white") {
+        const log = document.getElementById('battle-log');
+        log.innerHTML += `<span style="color:${color}">> ${text}</span><br>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function playerAction(type) {
+        let dmg = 0;
+
+        if (type === 'attack') {
+            dmg = 10 + player.lvl;
+            if (domainActive) dmg *= 2;
+            addLog(`Вы нанесли удар: -${dmg} HP`);
+        } 
+        else if (type === 'tech') {
+            if (player.energy < 20) return addLog("Недостаточно энергии!", "red");
+            player.energy -= 20;
+            dmg = 25 + (player.lvl * 5);
+            if (domainActive) dmg *= 2;
+            addLog(`Техника ${player.tech} поражает цель: -${dmg} HP`, "#8e2de2");
+        } 
+        else if (type === 'domain') {
+            if (player.energy < 80) return addLog("Нужно минимум 80 ПЭ для Территории!", "red");
+            player.energy -= 80;
+            domainActive = true;
+            document.getElementById('game-container').classList.add('domain-active');
+            addLog("РАСШИРЕНИЕ ТЕРРИТОРИИ! Ваши силы удвоены, урон колоссален!", "cyan");
+            dmg = 40;
+        }
+        else if (type === 'heal') {
+            let heal = 20 + player.lvl;
+            player.hp = 100; // Упрощенно
+            player.energy = Math.min(100, player.energy + 15);
+            addLog("Вы восстановили концентрацию и энергию", "green");
+        }
+
+        enemy.hp -= dmg;
+        updateEnemyHP();
+
+        if (enemy.hp <= 0) {
+            addLog("ПРОКЛЯТИЕ ИЗГНАНО!", "lime");
+            setTimeout(victory, 1000);
             return;
         }
 
-        const newPlayer = {
-            name: name,
-            pass: pass,
-            tech: tech,
-            level: 1,
-            rank: "4-й ранг"
-        };
-
-        players.push(newPlayer);
-        localStorage.setItem('jujutsu_players', JSON.stringify(players));
+        // Ход врага
+        let enemyDmg = Math.floor(Math.random() * enemy.dmg) + 2;
+        addLog(`${enemy.name} атакует: -${enemyDmg} HP`, "red");
         
-        alert("Регистрация успешна!");
-        showScreen('login-screen');
+        updateUI();
     }
 
-    // Вход
-    function login() {
-        const name = document.getElementById('login-name').value;
-        const pass = document.getElementById('login-pass').value;
+    function victory() {
+        let gainExp = 40;
+        let gainMoney = 50;
+        player.exp += gainExp;
+        player.money += gainMoney;
+        player.energy = 100;
 
-        let players = JSON.parse(localStorage.getItem('jujutsu_players') || "[]");
-        const user = players.find(p => p.name === name && p.pass === pass);
+        if (player.exp >= (player.lvl * 100)) {
+            player.lvl++;
+            player.exp = 0;
+            alert("ВАШ УРОВЕНЬ ПОВЫШЕН!");
+        }
 
-        if (user) {
-            currentPlayer = user;
-            updateMenu();
-            showScreen('main-menu');
+        saveData();
+        updateUI();
+        showScreen('screen-menu');
+    }
+
+    function buyItem() {
+        if (player.money >= 200) {
+            let buy = confirm("Купить Проклятый Клинок за 200 ¥? (Постоянный бонус к урону)");
+            if (buy) {
+                player.money -= 200;
+                player.lvl += 1; // Усиление через фиктивный уровень
+                saveData();
+                updateUI();
+                alert("Покупка успешна!");
+            }
         } else {
-            alert("Неверное имя или пароль!");
+            alert("Недостаточно денег! Нужно 200 ¥");
         }
     }
 
-    // Обновление данных в меню
-    function updateMenu() {
-        document.getElementById('user-display').innerText = "Маг: " + currentPlayer.name;
-        document.getElementById('stat-rank').innerText = "Ранг: " + currentPlayer.rank;
-        document.getElementById('stat-tech').innerText = "Техника: " + currentPlayer.tech;
-        document.getElementById('stat-lvl').innerText = "Уровень: " + currentPlayer.level;
+    function saveData() {
+        let accounts = JSON.parse(localStorage.getItem('jjk_users'));
+        let idx = accounts.findIndex(u => u.name === player.name);
+        accounts[idx] = player;
+        localStorage.setItem('jjk_users', JSON.stringify(accounts));
     }
 
     function logout() {
-        currentPlayer = null;
-        showScreen('start-screen');
+        player = null;
+        showScreen('screen-start');
     }
 </script>
 
