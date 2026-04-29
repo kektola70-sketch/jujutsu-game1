@@ -2,42 +2,75 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Jujutsu Online: Tutorial Expansion</title>
+    <title>Jujutsu Online 3D: Cursed Era</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
-        #app { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
         
-        /* Экраны */
-        .screen { display: none; width: 100%; height: 100%; position: absolute; }
-        .active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* Глобальный контейнер */
+        #app { width: 100vw; height: 100vh; position: relative; }
 
-        /* Меню и Чат (Стиль из прошлых версий) */
-        #game-ui { display: flex; width: 1000px; height: 700px; background: #0f0f0f; border: 2px solid #4a00e0; border-radius: 15px; }
-        .sidebar { width: 300px; border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
-        .main { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; }
-        #chat { flex-grow: 1; background: #000; border: 1px solid #222; padding: 10px; overflow-y: auto; margin-bottom: 10px; }
-        
-        /* АРЕНА ОБУЧЕНИЯ */
-        #tutorial-arena { width: 800px; height: 500px; background: #111; border: 3px solid #f00; position: relative; overflow: hidden; display: none; }
-        .entity { position: absolute; width: 50px; height: 80px; transition: transform 0.1s; }
-        #player-gojo { background: #00d4ff; border-radius: 5px; box-shadow: 0 0 15px #00d4ff; }
-        #enemy-sukuna { background: #ff004c; border-radius: 5px; box-shadow: 0 0 15px #ff004c; }
-        
-        .hp-bar-wrap { width: 200px; height: 10px; background: #333; position: absolute; top: 20px; }
-        #sukuna-hp-fill { height: 100%; background: #f00; width: 100%; }
-        
-        #tutorial-msg { position: absolute; bottom: 20px; width: 100%; text-align: center; font-weight: bold; font-size: 20px; color: #fff; text-shadow: 2px 2px #000; }
-        
-        /* Столкновение домейнов */
-        #domain-clash { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(74, 0, 224, 0.7); z-index: 100; justify-content: center; align-items: center; flex-direction: column; }
-        .clash-bar { width: 400px; height: 30px; background: #333; border: 2px solid #fff; position: relative; }
-        #clash-fill { height: 100%; width: 50%; background: linear-gradient(to right, #00d4ff, #ff004c); }
+        /* ЭКРАН ВХОДА */
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
+        .active { display: flex; }
 
-        .btn { padding: 15px 30px; background: #4a00e0; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .hidden { display: none; }
+        /* ЧАТ (Теперь в левом верхнем углу) */
+        #chat-container {
+            position: absolute; top: 10px; left: 10px; width: 300px; height: 200px;
+            background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(74, 0, 224, 0.5);
+            border-radius: 8px; z-index: 1000; display: flex; flex-direction: column;
+            pointer-events: none; /* Пропускает клики сквозь себя к игре */
+        }
+        #chat-box { flex-grow: 1; overflow-y: auto; padding: 5px; font-size: 13px; color: #ccc; }
+        #chat-input { 
+            background: rgba(20, 20, 20, 0.8); border: none; border-top: 1px solid #333; 
+            color: white; padding: 5px; pointer-events: auto; outline: none;
+        }
+
+        /* 3D АРЕНА */
+        #arena-3d {
+            width: 100vw; height: 100vh; background: #050505;
+            perspective: 1200px; display: none; overflow: hidden;
+        }
+        #floor {
+            width: 3000px; height: 3000px; background: 
+                linear-gradient(rgba(74, 0, 224, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74, 0, 224, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(60deg) translateY(-1000px);
+            transform-origin: center;
+            position: absolute; top: 0; left: -1000px; transition: 0.1s;
+        }
+
+        /* ПЕРСОНАЖИ В 3D */
+        .entity {
+            position: absolute; width: 60px; height: 100px;
+            transform-style: preserve-3d; transition: 0.1s linear;
+        }
+        .character-visual {
+            width: 100%; height: 100%; border-radius: 10px;
+            transform: rotateX(-60deg); /* Чтобы стояли вертикально на наклоненном полу */
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #gojo-player .character-visual { background: #00d4ff; border: 2px solid #fff; box-shadow: 0 0 20px #00d4ff; }
+        #sukuna-boss .character-visual { background: #ff004c; border: 2px solid #fff; box-shadow: 0 0 20px #ff004c; }
+
+        /* UI ИГРЫ */
+        #game-stats { position: absolute; top: 10px; right: 10px; text-align: right; z-index: 1000; }
+        .ui-btn { padding: 15px 30px; background: #4a00e0; color: white; border: none; border-radius: 8px; cursor: pointer; }
+
+        /* СТОЛКНОВЕНИЕ ДОМЕЙНОВ */
+        #clash-overlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(74, 0, 224, 0.4) 0%, rgba(0,0,0,0.9) 100%);
+            z-index: 2000; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .clash-bar { width: 500px; height: 40px; background: #222; border: 3px solid #fff; border-radius: 20px; overflow: hidden; }
+        #clash-fill { height: 100%; width: 50%; background: linear-gradient(90deg, #00d4ff, #ff004c); transition: 0.1s; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -45,42 +78,50 @@
 <div id="app">
     <!-- АВТОРИЗАЦИЯ -->
     <div id="screen-auth" class="screen active">
-        <h1>JUJUTSU ONLINE</h1>
-        <input type="email" id="email" placeholder="Email" style="padding:10px; margin:5px; width:250px;">
-        <input type="password" id="password" placeholder="Password" style="padding:10px; margin:5px; width:250px;">
-        <button class="btn" onclick="auth('login')">ВОЙТИ</button>
-        <button onclick="auth('reg')" style="background:none; border:none; color:#555; cursor:pointer; margin-top:10px;">Регистрация</button>
+        <h1 style="color:#8e2de2">JUJUTSU ONLINE 3D</h1>
+        <input type="email" id="email" placeholder="Email" style="width:250px; padding:10px; margin:5px; background:#111; border:1px solid #333; color:white;">
+        <input type="password" id="password" placeholder="Password" style="width:250px; padding:10px; margin:5px; background:#111; border:1px solid #333; color:white;">
+        <button class="ui-btn" onclick="auth('login')">ВОЙТИ</button>
+        <button onclick="auth('reg')" style="background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">Создать аккаунт</button>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ -->
-    <div id="screen-menu" class="screen">
-        <div id="game-ui">
-            <div class="sidebar">
-                <h3>МАГИ ОНЛАЙН</h3>
-                <div id="online-list" style="flex-grow:1; overflow-y:auto;"></div>
-                <button class="btn" onclick="startPlay()">ИГРАТЬ (ОБУЧЕНИЕ)</button>
-            </div>
-            <div class="main">
-                <h2 id="ui-name">Маг</h2>
-                <div id="chat"></div>
-                <input type="text" id="chat-input" placeholder="Чат..." onkeypress="if(event.keyCode==13) sendChat()" style="width:100%; padding:10px; background:#222; color:#fff; border:none;">
+    <!-- ИГРОВОЙ ИНТЕРФЕЙС -->
+    <div id="screen-main" class="screen">
+        <!-- Чат в левом верхнем углу -->
+        <div id="chat-container">
+            <div id="chat-box"></div>
+            <input type="text" id="chat-input" placeholder="Нажми Enter, чтобы написать..." onkeypress="if(event.keyCode==13) sendChat()">
+        </div>
+
+        <!-- Статы в правом верхнем углу -->
+        <div id="game-stats">
+            <h2 id="ui-name" style="margin:0">Маг</h2>
+            <div id="ui-lvl" style="color:#8e2de2; font-weight:bold;">Уровень 1</div>
+            <div id="online-list" style="font-size:12px; margin-top:10px; opacity:0.7"></div>
+            <button id="btn-play" class="ui-btn" style="margin-top:10px;" onclick="enter3D()">ИГРАТЬ (3D)</button>
+        </div>
+
+        <!-- 3D АРЕНА -->
+        <div id="arena-3d">
+            <div id="floor">
+                <!-- Твой персонаж -->
+                <div id="gojo-player" class="entity">
+                    <div class="character-visual"></div>
+                    <div style="position:absolute; top:-30px; width:100px; text-align:center; left:-20px; font-weight:bold;">Gojo (You)</div>
+                </div>
+                <!-- Сукуна босс -->
+                <div id="sukuna-boss" class="entity" style="left: 600px; top: 600px;">
+                    <div class="character-visual"></div>
+                    <div style="position:absolute; top:-30px; width:100px; text-align:center; left:-20px; color:#ff004c; font-weight:bold;">Sukuna</div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- АРЕНА ОБУЧЕНИЯ -->
-    <div id="screen-tutorial" class="screen">
-        <div id="tutorial-arena">
-            <div class="hp-bar-wrap" style="left: 550px;"><div id="sukuna-hp-fill"></div></div>
-            <div id="player-gojo" class="entity" style="left: 100px; top: 200px;"></div>
-            <div id="enemy-sukuna" class="entity" style="left: 600px; top: 200px;"></div>
-            <div id="tutorial-msg">Двигайся на WASD</div>
-            
-            <div id="domain-clash">
-                <h1>СТОЛКНОВЕНИЕ ТЕРРИТОРИЙ</h1>
-                <p>ЖМИ БЫСТРО 'E' ЧТОБЫ ПОБЕДИТЬ!</p>
-                <div class="clash-bar"><div id="clash-fill"></div></div>
-            </div>
+        <!-- СТОЛКНОВЕНИЕ ДОМЕЙНОВ -->
+        <div id="clash-overlay">
+            <h1 style="text-shadow: 0 0 20px #8e2de2;">СТОЛКНОВЕНИЕ ТЕРРИТОРИЙ</h1>
+            <p>СПАМЬ КЛАВИШУ [ E ]</p>
+            <div class="clash-bar"><div id="clash-fill"></div></div>
         </div>
     </div>
 </div>
@@ -99,20 +140,23 @@
     firebase.initializeApp(firebaseConfig);
     const authFirebase = firebase.auth();
     const db = firebase.database();
+    
     let player = null;
-
-    // Состояние обучения
-    let tutState = {
-        active: false,
-        step: 0,
-        sukunaHP: 100,
-        playerPos: {x: 100, y: 200},
-        stunCounter: 0,
-        clashActive: false,
-        clashValue: 50
+    let gameState = { 
+        in3D: false, 
+        pos: {x: 100, y: 100}, 
+        sukunaHP: 100, 
+        clash: 50, 
+        stun: 0, 
+        active: true 
     };
 
-    // --- АВТОРИЗАЦИЯ ---
+    // --- ЛОГИКА БОТОВ (Gojo и Sukuna теперь Lvl 1 и общаются) ---
+    const bots = [
+        { name: "gojo975", lvl: 1, color: "#00d4ff", phrases: ["Я здесь, не паникуйте.", "Кто-нибудь видел Сукуну?", "Легкая работа сегодня."] },
+        { name: "sukuna789", lvl: 1, color: "#ff004c", phrases: ["Где этот проклятый Сатору?", "Этот мир станет моим.", "Склоните головы."] }
+    ];
+
     function auth(type) {
         const e = document.getElementById('email').value;
         const p = document.getElementById('password').value;
@@ -123,12 +167,13 @@
     authFirebase.onAuthStateChanged(user => {
         if(user) {
             db.ref('players/' + user.uid).on('value', snap => {
-                player = snap.val() || {name: user.email.split('@')[0], lvl: 1, tutorialDone: false};
+                player = snap.val() || { name: user.email.split('@')[0], lvl: 1 };
                 player.uid = user.uid;
                 document.getElementById('ui-name').innerText = player.name;
-                showScreen('screen-menu');
+                document.getElementById('ui-lvl').innerText = "Уровень " + player.lvl;
+                showScreen('screen-main');
             });
-            syncWorld();
+            startSync();
         } else showScreen('screen-auth');
     });
 
@@ -137,145 +182,118 @@
         document.getElementById(id).classList.add('active');
     }
 
-    // --- ЛОГИКА ОБУЧЕНИЯ ---
-    function startPlay() {
-        if(player.tutorialDone) {
-            alert("Обучение уже пройдено! Выход на миссию...");
-            return;
-        }
-        showScreen('screen-tutorial');
-        document.getElementById('tutorial-arena').style.display = 'block';
-        tutState.active = true;
-        initTutorialControls();
-    }
-
-    function initTutorialControls() {
-        window.addEventListener('keydown', (e) => {
-            if(!tutState.active || tutState.clashActive) return;
-            
-            const key = e.code;
-            const step = tutState.step;
-
-            // Движение
-            if(step === 0 && (key.includes('Key'))) {
-                updatePos(key);
-                if(tutState.playerPos.x > 150) nextStep("Нажми SPACE для уворота");
-            }
-            // Уворот
-            if(step === 1 && key === 'Space') {
-                nextStep("Нажми '1' для атаки (Собери 3 очка оглушения)");
-            }
-            // Атаки и Стан
-            if(step === 2) {
-                if(key === 'Digit1') handleHit(1); // Обычный удар
-                if(key === 'Digit2') handleHit(2); // Скилл (считается за 2 очка если комбо)
-            }
-            // Домейн
-            if(tutState.clashActive && key === 'KeyE') {
-                tutState.clashValue += 3;
-                updateClashUI();
-            }
-        });
-    }
-
-    function updatePos(key) {
-        if(key === 'KeyD') tutState.playerPos.x += 10;
-        if(key === 'KeyA') tutState.playerPos.x -= 10;
-        if(key === 'KeyW') tutState.playerPos.y -= 10;
-        if(key === 'KeyS') tutState.playerPos.y += 10;
-        const p = document.getElementById('player-gojo');
-        p.style.left = tutState.playerPos.x + 'px';
-        p.style.top = tutState.playerPos.y + 'px';
-    }
-
-    function nextStep(msg) {
-        tutState.step++;
-        document.getElementById('tutorial-msg').innerText = msg;
-    }
-
-    function handleHit(points) {
-        tutState.stunCounter += points;
-        tutState.sukunaHP -= (points * 5);
+    // --- 3D ПЕРЕХОД ---
+    function enter3D() {
+        gameState.in3D = true;
+        document.getElementById('arena-3d').style.display = 'block';
+        document.getElementById('btn-play').classList.add('hidden');
+        addChatMessage("Система", "Обучение начато. WASD - движение, 1-2 - атаки.");
         
-        if(tutState.stunCounter >= 3) {
-            document.getElementById('tutorial-msg').innerText = "СУКУНА ОГЛУШЕН!";
-            tutState.stunCounter = 0;
-            setTimeout(() => { if(!tutState.clashActive) document.getElementById('tutorial-msg').innerText = "Бей еще!"; }, 1000);
-        }
-
-        updateSukunaHP();
-
-        if(tutState.sukunaHP <= 50 && !tutState.clashActive) {
-            startDomainClash();
-        }
+        window.addEventListener('keydown', handleInput);
     }
 
-    function updateSukunaHP() {
-        document.getElementById('sukuna-hp-fill').style.width = tutState.sukunaHP + '%';
-    }
-
-    function startDomainClash() {
-        tutState.clashActive = true;
-        document.getElementById('domain-clash').style.display = 'flex';
-        document.getElementById('tutorial-msg').innerText = "";
+    function handleInput(e) {
+        if(!gameState.active) return;
+        const k = e.code;
         
-        // Бот Сукуна кликает идеально
-        const botInterval = setInterval(() => {
-            if(!tutState.clashActive) { clearInterval(botInterval); return; }
-            tutState.clashValue -= 2; // Бот давит
-            updateClashUI();
-            
-            if(tutState.clashValue <= 0) {
-                alert("Сукуна поглотил твой домен! Попробуй снова.");
-                location.reload();
-            }
+        // Передвижение в 3D
+        if(k === 'KeyW') gameState.pos.y -= 15;
+        if(k === 'KeyS') gameState.pos.y += 15;
+        if(k === 'KeyA') gameState.pos.x -= 15;
+        if(k === 'KeyD') gameState.pos.x += 15;
+
+        // Боевая система
+        if(k === 'Digit1') attack(1);
+        if(k === 'Digit2') attack(2);
+        
+        // Клинч (Столкновение)
+        if(k === 'KeyE' && gameState.clashActive) {
+            gameState.clash += 4;
+            updateClash();
+        }
+
+        updateFrame();
+    }
+
+    function attack(p) {
+        gameState.stun += p;
+        gameState.sukunaHP -= (p * 4);
+        if(gameState.stun >= 3) {
+            addChatMessage("Gojo", "Сукуна оглушен!");
+            gameState.stun = 0;
+        }
+        if(gameState.sukunaHP <= 50 && !gameState.clashActive) startClash();
+    }
+
+    function startClash() {
+        gameState.clashActive = true;
+        document.getElementById('clash-overlay').style.display = 'flex';
+        const botPower = setInterval(() => {
+            if(!gameState.clashActive) { clearInterval(botPower); return; }
+            gameState.clash -= 1.5; // Сукуна давит
+            updateClash();
+            if(gameState.clash <= 0) { alert("Вы проиграли столкновение!"); location.reload(); }
         }, 100);
     }
 
-    function updateClashUI() {
-        document.getElementById('clash-fill').style.width = tutState.clashValue + '%';
-        if(tutState.clashValue >= 100) {
-            tutState.clashActive = false;
-            document.getElementById('domain-clash').innerHTML = "<h1>ТЫ ПОБЕДИЛ!</h1>";
-            setTimeout(finishTutorial, 2000);
+    function updateClash() {
+        document.getElementById('clash-fill').style.width = gameState.clash + "%";
+        if(gameState.clash >= 100) {
+            gameState.clashActive = false;
+            document.getElementById('clash-overlay').innerHTML = "<h1>ТЕРРИТОРИЯ ПОБЕЖДЕНА</h1>";
+            setTimeout(() => { location.reload(); }, 2000);
         }
     }
 
-    function finishTutorial() {
-        db.ref('players/' + player.uid).update({tutorialDone: true, lvl: 2});
-        alert("Обучение завершено! Теперь ты настоящий маг.");
-        location.reload();
+    function updateFrame() {
+        const p = document.getElementById('gojo-player');
+        p.style.left = gameState.pos.x + 'px';
+        p.style.top = gameState.pos.y + 'px';
+        // Камера следует за игроком
+        document.getElementById('floor').style.transform = `rotateX(60deg) translateX(${-gameState.pos.x + 400}px) translateY(${-gameState.pos.y + 400}px)`;
     }
 
-    // --- ОНЛАЙН ЧАТ И БОТЫ (gojo975, sukuna789) ---
-    function syncWorld() {
-        db.ref('chat').limitToLast(10).on('value', snap => {
-            const chat = document.getElementById('chat');
-            chat.innerHTML = "";
+    // --- ОНЛАЙН СИНХРОНИЗАЦИЯ И ЧАТ БОТОВ ---
+    function startSync() {
+        db.ref('chat').limitToLast(15).on('value', snap => {
+            const box = document.getElementById('chat-box');
+            box.innerHTML = "";
             snap.forEach(c => {
                 const m = c.val();
-                chat.innerHTML += `<div><b>${m.user}:</b> ${m.text}</div>`;
+                let color = "#ccc";
+                if(m.user === "gojo975") color = "#00d4ff";
+                if(m.user === "sukuna789") color = "#ff004c";
+                box.innerHTML += `<div><b style="color:${color}">${m.user}:</b> ${m.text}</div>`;
             });
-            chat.scrollTop = chat.scrollHeight;
+            box.scrollTop = box.scrollHeight;
         });
 
         db.ref('players').on('value', snap => {
             const list = document.getElementById('online-list');
-            list.innerHTML = "";
-            // Боты
-            list.innerHTML += "<div><b style='color:#00d4ff'>gojo975</b> (Lvl 999)</div>";
-            list.innerHTML += "<div><b style='color:#ff004c'>sukuna789</b> (Lvl 999)</div>";
-            snap.forEach(p => {
-                const d = p.val();
-                list.innerHTML += `<div>${d.name} (Lvl ${d.lvl})</div>`;
-            });
+            list.innerHTML = "В СЕТИ:<br>";
+            bots.forEach(b => list.innerHTML += `<span style="color:${b.color}">${b.name} (Lvl ${b.lvl})</span><br>`);
+            snap.forEach(p => list.innerHTML += `<span>${p.val().name} (Lvl ${p.val().lvl})</span><br>`);
         });
+
+        // БОТЫ ГОВОРЯТ (Раз в 15-20 секунд)
+        setInterval(() => {
+            const bot = bots[Math.floor(Math.random() * bots.length)];
+            const phrase = bot.phrases[Math.floor(Math.random() * bot.phrases.length)];
+            db.ref('chat').push({ user: bot.name, text: phrase });
+        }, 20000);
     }
 
     function sendChat() {
         const input = document.getElementById('chat-input');
-        db.ref('chat').push({user: player.name, text: input.value});
+        if(!input.value) return;
+        db.ref('chat').push({ user: player.name, text: input.value });
         input.value = "";
+    }
+
+    function addChatMessage(user, text) {
+        const box = document.getElementById('chat-box');
+        box.innerHTML += `<div><b>${user}:</b> ${text}</div>`;
+        box.scrollTop = box.scrollHeight;
     }
 </script>
 </body>
