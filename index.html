@@ -2,109 +2,154 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Jujutsu Kaisen Online</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <title>Jujutsu Online</title>
+    <link rel="icon" href="icon.jpg">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { background: #050505; color: white; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #app { width: 700px; height: 500px; background: #111; border: 2px solid #4a00e0; display: flex; border-radius: 10px; overflow: hidden; }
-        .sidebar { width: 200px; border-right: 1px solid #333; padding: 10px; background: #0a0a0a; }
-        .main { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; }
-        .chat { height: 150px; background: #000; margin-top: auto; padding: 10px; overflow-y: auto; font-size: 12px; border: 1px solid #222; }
-        .screen { display: none; width: 100%; height: 100%; }
+        body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #app { width: 900px; height: 600px; background: #0f0f0f; border: 2px solid #4a00e0; display: flex; border-radius: 15px; box-shadow: 0 0 50px rgba(74, 0, 224, 0.5); }
+        .sidebar { width: 250px; border-right: 1px solid #222; padding: 20px; background: #080808; display: flex; flex-direction: column; }
+        .main { flex-grow: 1; padding: 30px; display: flex; flex-direction: column; }
+        .screen { display: none; height: 100%; width: 100%; }
         .active { display: block; }
-        input { width: 100%; padding: 10px; margin: 5px 0; background: #222; border: 1px solid #444; color: white; }
-        button { width: 100%; padding: 10px; background: #4a00e0; color: white; border: none; cursor: pointer; margin-top: 5px; }
-        .player-online { font-size: 14px; color: #8e2de2; margin-bottom: 5px; border-bottom: 1px solid #222; }
-        .system-msg { color: #555; font-style: italic; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
+        .btn-blue { background: linear-gradient(45deg, #4a00e0, #8e2de2); color: white; }
+        .btn-google { background: white; color: #444; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        #chat { flex-grow: 1; background: #000; border: 1px solid #222; border-radius: 10px; padding: 15px; overflow-y: auto; margin-bottom: 10px; font-size: 14px; }
+        .player-item { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .status-on { color: #0f0; width: 8px; height: 8px; background: #0f0; border-radius: 50%; display: inline-block; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <!-- Экраны входа -->
     <div id="screen-auth" class="screen active" style="padding: 50px; text-align: center;">
         <h1>JUJUTSU ONLINE</h1>
-        <input type="text" id="username" placeholder="Имя мага">
-        <select id="tech" style="width:100%; padding:10px; background: #222; color:white;">
-            <option value="Десять Теней">Десять Теней</option>
-            <option value="Манипуляция Кровью">Манипуляция Кровью</option>
-        </select>
-        <button onclick="connectToServer()">ВОЙТИ В МИР</button>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Пароль">
+        <button class="btn btn-blue" onclick="emailAuth('login')">Войти</button>
+        <button class="btn" style="background: #222; color: #888;" onclick="emailAuth('reg')">Регистрация</button>
+        <button class="btn btn-google" onclick="googleAuth()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"> Войти через Google
+        </button>
     </div>
 
-    <!-- Игровой мир -->
-    <div id="screen-game" class="screen" style="display: flex; width: 100%;">
+    <div id="screen-game" class="screen" style="display: flex;">
         <div class="sidebar">
-            <h4>ОНЛАЙН МАГИ</h4>
-            <div id="player-list"></div>
+            <h3 style="color: #8e2de2;">МАГИ ОНЛАЙН</h3>
+            <div id="online-list"></div>
+            <button class="btn" style="background: #333; color: white;" onclick="logout()">Выйти</button>
         </div>
         <div class="main">
-            <h2 id="my-name">Маг</h2>
-            <div id="game-world" style="flex-grow: 1;">
-                <p>Добро пожаловать в онлайн мир! Здесь вы будете видеть других игроков.</p>
-                <button onclick="alert('Бой с боссом!')">ИЗГНАТЬ ПРОКЛЯТИЕ</button>
-            </div>
-            
-            <div class="chat" id="chat-box"></div>
-            <input type="text" id="chat-input" placeholder="Написать в чат..." onkeypress="if(event.keyCode==13) sendMessage()">
+            <h2 id="ui-name">Загрузка...</h2>
+            <div id="chat"></div>
+            <input type="text" id="chat-input" placeholder="Сообщение..." onkeypress="if(event.keyCode==13) sendChat()">
+            <button class="btn btn-blue" onclick="battle()">ИЗГНАТЬ ПРОКЛЯТИЕ</button>
         </div>
     </div>
 </div>
 
 <script>
-    let socket;
-    let myData = {};
+    const firebaseConfig = {
+      apiKey: "AIzaSyBlRu6TR34iW6CPhdYqdJfN0-lSzsjCHvM",
+      authDomain: "jujutsu-online.firebaseapp.com",
+      projectId: "jujutsu-online",
+      storageBucket: "jujutsu-online.firebasestorage.app",
+      messagingSenderId: "477129692532",
+      appId: "1:477129692532:web:cefdd8666c8a1f3f020821",
+      measurementId: "G-YTC09F48BJ",
+      // ВАЖНО: правильный URL твоей базы
+      databaseURL: "https://jujutsu-online-default-rtdb.firebaseio.com/"
+    };
 
-    function connectToServer() {
-        const name = document.getElementById('username').value;
-        const tech = document.getElementById('tech').value;
-        if(!name) return alert("Введи имя!");
-
-        // Подключаемся к серверу (здесь должен быть IP твоего сервера)
-        socket = io("http://localhost:3000"); 
-
-        socket.on('connect', () => {
-            myData = { name, tech, lvl: 1 };
-            socket.emit('join_game', myData);
-            document.getElementById('my-name').innerText = name + " (" + tech + ")";
-            showScreen('screen-game');
-        });
-
-        socket.on('chat_message', (data) => {
-            const box = document.getElementById('chat-box');
-            const msg = document.createElement('div');
-            if(data.system) {
-                msg.className = 'system-msg';
-                msg.innerText = data.msg;
-            } else {
-                msg.innerHTML = `<b style="color:#8e2de2">${data.name}:</b> ${data.msg}`;
-            }
-            box.appendChild(msg);
-            box.scrollTop = box.scrollHeight;
-        });
-
-        socket.on('update_players', (players) => {
-            const list = document.getElementById('player-list');
-            list.innerHTML = "";
-            for(let id in players) {
-                const p = players[id];
-                list.innerHTML += `<div class="player-online">${p.name} [Lvl ${p.lvl}]</div>`;
-            }
-        });
-    }
-
-    function sendMessage() {
-        const input = document.getElementById('chat-input');
-        if(input.value) {
-            socket.emit('send_message', input.value);
-            input.value = "";
-        }
-    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    let player = null;
 
     function showScreen(id) {
         document.getElementById('screen-auth').style.display = 'none';
         document.getElementById('screen-game').style.display = 'none';
         document.getElementById(id).style.display = (id === 'screen-game' ? 'flex' : 'block');
+    }
+
+    function emailAuth(type) {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        if (type === 'reg') {
+            auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message));
+        } else {
+            auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
+        }
+    }
+
+    function googleAuth() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(e => alert(e.message));
+    }
+
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            db.ref('players/' + user.uid).on('value', (snap) => {
+                player = snap.val();
+                if (!player) {
+                    db.ref('players/' + user.uid).set({
+                        name: user.displayName || user.email.split('@')[0],
+                        lvl: 1, exp: 0, online: true
+                    });
+                } else {
+                    document.getElementById('ui-name').innerText = player.name + " [Lvl " + player.lvl + "]";
+                    db.ref('players/' + user.uid + '/online').set(true);
+                    db.ref('players/' + user.uid + '/online').onDisconnect().set(false);
+                    showScreen('screen-game');
+                }
+            });
+            syncData();
+        } else {
+            showScreen('screen-auth');
+        }
+    });
+
+    function syncData() {
+        db.ref('chat').limitToLast(15).on('value', snap => {
+            const box = document.getElementById('chat');
+            box.innerHTML = "";
+            snap.forEach(c => {
+                const m = c.val();
+                box.innerHTML += `<div><b>${m.user}:</b> ${m.text}</div>`;
+            });
+            box.scrollTop = box.scrollHeight;
+        });
+
+        db.ref('players').on('value', snap => {
+            const list = document.getElementById('online-list');
+            list.innerHTML = "";
+            snap.forEach(child => {
+                const p = child.val();
+                if (p.online) list.innerHTML += `<div class="player-item"><span><i class="status-on"></i> ${p.name}</span><b>Lvl ${p.lvl}</b></div>`;
+            });
+        });
+    }
+
+    function sendChat() {
+        const input = document.getElementById('chat-input');
+        if (input.value) {
+            db.ref('chat').push({ user: player.name, text: input.value });
+            input.value = "";
+        }
+    }
+
+    function battle() {
+        player.lvl++;
+        db.ref('players/' + auth.currentUser.uid).update({ lvl: player.lvl });
+    }
+
+    function logout() {
+        if (auth.currentUser) db.ref('players/' + auth.currentUser.uid + '/online').set(false);
+        auth.signOut();
     }
 </script>
 </body>
