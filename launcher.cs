@@ -1,27 +1,26 @@
 using System;
-using System.Diagnostics;
 using System.Windows.Forms;
+using System.Diagnostics;
 
-class Program {
+class JujutsuLauncher {
     [STAThread]
     static void Main() {
-        // Ссылка на твою онлайн-игру
-        string url = "https://твой-ник.github.io/jujutsu-game/"; 
-        
-        ProcessStartInfo startInfo = new ProcessStartInfo();
-        
-        // Пытаемся найти Яндекс или Хром для запуска в режиме приложения (без строк адреса)
-        string yandexPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Yandex\YandexBrowser\Application\browser.exe";
-        
-        if (System.IO.File.Exists(yandexPath)) {
-            startInfo.FileName = yandexPath;
-            startInfo.Arguments = "--app=" + url;
-        } else {
-            // Если Яндекса нет, открываем просто в браузере
-            startInfo.FileName = url;
-            startInfo.UseShellExecute = true;
-        }
+        Application.EnableVisualStyles();
+        Form form = new Form();
+        form.Text = "Jujutsu Kaisen Online";
+        form.Width = 750;
+        form.Height = 550;
+        form.FormBorderStyle = FormBorderStyle.FixedSingle;
+        form.StartPosition = FormStartPosition.CenterScreen;
 
-        Process.Start(startInfo);
+        WebBrowser browser = new WebBrowser();
+        browser.Dock = DockStyle.Fill;
+        
+        // Указываем путь к нашему онлайн-клиенту
+        // Если игра на хостинге, пишем https://сайт.com
+        browser.Url = new Uri("file://" + System.IO.Directory.GetCurrentDirectory() + "/index.html");
+        
+        form.Controls.Add(browser);
+        Application.Run(form);
     }
 }
