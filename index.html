@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <title>Jujutsu Online</title>
     <link rel="icon" href="icon.jpg">
+    
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
         #app { width: 900px; height: 600px; background: #0f0f0f; border: 2px solid #4a00e0; display: flex; border-radius: 15px; box-shadow: 0 0 50px rgba(74, 0, 224, 0.5); }
@@ -14,56 +17,66 @@
         .main { flex-grow: 1; padding: 30px; display: flex; flex-direction: column; }
         .screen { display: none; height: 100%; width: 100%; }
         .active { display: block; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; }
+        
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
         .btn-blue { background: linear-gradient(45deg, #4a00e0, #8e2de2); color: white; }
-        .btn-google { background: white; color: #444; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-google { background: white; color: #444; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #ddd; }
+        .btn-google:hover { background: #f1f1f1; }
+        
         #chat { flex-grow: 1; background: #000; border: 1px solid #222; border-radius: 10px; padding: 15px; overflow-y: auto; margin-bottom: 10px; font-size: 14px; }
         .player-item { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .status-on { color: #0f0; width: 8px; height: 8px; background: #0f0; border-radius: 50%; display: inline-block; }
+        .status-on { color: #0f0; width: 8px; height: 8px; background: #0f0; border-radius: 50%; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body>
 
 <div id="app">
+    <!-- ЭКРАН ВХОДА -->
     <div id="screen-auth" class="screen active" style="padding: 50px; text-align: center;">
         <h1>JUJUTSU ONLINE</h1>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Пароль">
-        <button class="btn btn-blue" onclick="emailAuth('login')">Войти</button>
-        <button class="btn" style="background: #222; color: #888;" onclick="emailAuth('reg')">Регистрация</button>
+        <div id="email-login">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Пароль">
+            <button class="btn btn-blue" onclick="emailAuth('login')">Войти через Почту</button>
+            <button class="btn" style="background: #222; color: #888;" onclick="emailAuth('reg')">Регистрация</button>
+        </div>
+        
+        <!-- КНОПКА GOOGLE -->
         <button class="btn btn-google" onclick="googleAuth()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"> Войти через Google
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20">
+            Войти через Google
         </button>
     </div>
 
+    <!-- ЭКРАН ИГРЫ -->
     <div id="screen-game" class="screen" style="display: flex;">
         <div class="sidebar">
             <h3 style="color: #8e2de2;">МАГИ ОНЛАЙН</h3>
             <div id="online-list"></div>
-            <button class="btn" style="background: #333; color: white;" onclick="logout()">Выйти</button>
+            <button class="btn" style="background: #333; color: white; margin-top: auto;" onclick="logout()">Выйти</button>
         </div>
         <div class="main">
-            <h2 id="ui-name">Загрузка...</h2>
+            <h2 id="ui-name">Загрузка мага...</h2>
             <div id="chat"></div>
-            <input type="text" id="chat-input" placeholder="Сообщение..." onkeypress="if(event.keyCode==13) sendChat()">
-            <button class="btn btn-blue" onclick="battle()">ИЗГНАТЬ ПРОКЛЯТИЕ</button>
+            <input type="text" id="chat-input" placeholder="Написать сообщение..." onkeypress="if(event.keyCode==13) sendChat()">
+            <button class="btn btn-blue" onclick="battle()">ИЗГНАТЬ ПРОКЛЯТИЕ (Lvl Up)</button>
         </div>
     </div>
 </div>
 
 <script>
+    // ТВОЙ КОНФИГ С ИСПРАВЛЕННЫМ РЕГИОНОМ
     const firebaseConfig = {
-    apiKey: "AIzaSyBlRu6TR34iW6CPhdYqdJfN0-lSzsjCHvM",
-    authDomain: "jujutsu-online.firebaseapp.com",
-    projectId: "jujutsu-online",
-    storageBucket: "jujutsu-online.firebasestorage.app",
-    messagingSenderId: "477129692532",
-    appId: "1:477129692532:web:cefdd8666c8a1f3f020821",
-    measurementId: "G-YTC09F48BJ",
-    // ВОТ ТУТ ИСПРАВЛЕНО (взят адрес из твоего фото):
-    databaseURL: "https://jujutsu-online-default-rtdb.europe-west1.firebasedatabase.app" 
-};
+        apiKey: "AIzaSyBlRu6TR34iW6CPhdYqdJfN0-lSzsjCHvM",
+        authDomain: "jujutsu-online.firebaseapp.com",
+        projectId: "jujutsu-online",
+        storageBucket: "jujutsu-online.firebasestorage.app",
+        messagingSenderId: "477129692532",
+        appId: "1:477129692532:web:cefdd8666c8a1f3f020821",
+        measurementId: "G-YTC09F48BJ",
+        databaseURL: "https://jujutsu-online-default-rtdb.europe-west1.firebasedatabase.app"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -76,29 +89,47 @@
         document.getElementById(id).style.display = (id === 'screen-game' ? 'flex' : 'block');
     }
 
+    // --- ВХОД ЧЕРЕЗ ПОЧТУ ---
     function emailAuth(type) {
-        const email = document.getElementById('email').value;
-        const pass = document.getElementById('password').value;
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value.trim();
+        if(!email || !pass) return alert("Введите данные!");
+
         if (type === 'reg') {
-            auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message));
+            auth.createUserWithEmailAndPassword(email, pass)
+                .then(() => alert("Регистрация успешна! Войдите."))
+                .catch(e => alert("Ошибка: " + e.message));
         } else {
-            auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
+            auth.signInWithEmailAndPassword(email, pass)
+                .catch(e => alert("Ошибка: " + e.message));
         }
     }
 
+    // --- ВХОД ЧЕРЕЗ GOOGLE (ТО, ЧТО ТЫ ПРОСИЛ) ---
     function googleAuth() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(e => alert(e.message));
+        // Это откроет всплывающее окно выбора аккаунта Google
+        auth.signInWithPopup(provider)
+            .then((result) => {
+                console.log("Успешный вход через Google:", result.user.displayName);
+            })
+            .catch((e) => {
+                alert("Ошибка Google: " + e.message);
+                console.error(e);
+            });
     }
 
+    // СЛУШАТЕЛЬ СОСТОЯНИЯ
     auth.onAuthStateChanged((user) => {
         if (user) {
-            db.ref('players/' + user.uid).on('value', (snap) => {
+            const playerRef = db.ref('players/' + user.uid);
+            playerRef.on('value', (snap) => {
                 player = snap.val();
                 if (!player) {
+                    // Создаем профиль, если его нет
                     db.ref('players/' + user.uid).set({
                         name: user.displayName || user.email.split('@')[0],
-                        lvl: 1, exp: 0, online: true
+                        lvl: 1, online: true
                     });
                 } else {
                     document.getElementById('ui-name').innerText = player.name + " [Lvl " + player.lvl + "]";
@@ -107,13 +138,14 @@
                     showScreen('screen-game');
                 }
             });
-            syncData();
+            syncChatAndOnline();
         } else {
             showScreen('screen-auth');
         }
     });
 
-    function syncData() {
+    function syncChatAndOnline() {
+        // Чат
         db.ref('chat').limitToLast(15).on('value', snap => {
             const box = document.getElementById('chat');
             box.innerHTML = "";
@@ -124,27 +156,30 @@
             box.scrollTop = box.scrollHeight;
         });
 
+        // Онлайн
         db.ref('players').on('value', snap => {
             const list = document.getElementById('online-list');
             list.innerHTML = "";
             snap.forEach(child => {
                 const p = child.val();
-                if (p.online) list.innerHTML += `<div class="player-item"><span><i class="status-on"></i> ${p.name}</span><b>Lvl ${p.lvl}</b></div>`;
+                if (p.online) {
+                    list.innerHTML += `<div class="player-item"><span><i class="status-on"></i> ${p.name}</span><b>Lvl ${p.lvl}</b></div>`;
+                }
             });
         });
     }
 
     function sendChat() {
         const input = document.getElementById('chat-input');
-        if (input.value) {
+        if (input.value && player) {
             db.ref('chat').push({ user: player.name, text: input.value });
             input.value = "";
         }
     }
 
     function battle() {
-        player.lvl++;
-        db.ref('players/' + auth.currentUser.uid).update({ lvl: player.lvl });
+        if(!player) return;
+        db.ref('players/' + auth.currentUser.uid).update({ lvl: player.lvl + 1 });
     }
 
     function logout() {
@@ -152,5 +187,6 @@
         auth.signOut();
     }
 </script>
+
 </body>
 </html>
