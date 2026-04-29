@@ -1,10 +1,12 @@
 @echo off
-set "browser_path=%LocalAppData%\Yandex\YandexBrowser\Application\browser.exe"
+set "yandex=%LocalAppData%\Yandex\YandexBrowser\Application\browser.exe"
+set "icon=%cd%\icon.jpg"
 
-if exist "%browser_path%" (
-    start "" "%browser_path%" --app="%cd%\index.html"
+echo Запуск Магического Техникума...
+
+if exist "%yandex%" (
+    start "" "%yandex%" --app="%cd%/index.html" --icon="%icon%"
 ) else (
-    echo Путь к Yandex не найден автоматически.
-    echo Попробуй просто открыть index.html двойным кликом.
-    pause
+    echo Яндекс.Браузер не найден. Запуск в обычном браузере...
+    start index.html
 )
