@@ -54,16 +54,16 @@
 
 <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyBlRu6TR34iW6CPhdYqdJfN0-lSzsjCHvM",
-      authDomain: "jujutsu-online.firebaseapp.com",
-      projectId: "jujutsu-online",
-      storageBucket: "jujutsu-online.firebasestorage.app",
-      messagingSenderId: "477129692532",
-      appId: "1:477129692532:web:cefdd8666c8a1f3f020821",
-      measurementId: "G-YTC09F48BJ",
-      // ВАЖНО: правильный URL твоей базы
-      databaseURL: "https://jujutsu-online-default-rtdb.firebaseio.com/"
-    };
+    apiKey: "AIzaSyBlRu6TR34iW6CPhdYqdJfN0-lSzsjCHvM",
+    authDomain: "jujutsu-online.firebaseapp.com",
+    projectId: "jujutsu-online",
+    storageBucket: "jujutsu-online.firebasestorage.app",
+    messagingSenderId: "477129692532",
+    appId: "1:477129692532:web:cefdd8666c8a1f3f020821",
+    measurementId: "G-YTC09F48BJ",
+    // ВОТ ТУТ ИСПРАВЛЕНО (взят адрес из твоего фото):
+    databaseURL: "https://jujutsu-online-default-rtdb.europe-west1.firebasedatabase.app" 
+};
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
